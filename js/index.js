@@ -14,7 +14,17 @@ function init() {
 
 	//add the objects
 	//var myNeuron = new Neuron(scene);
-	addToMyGame(new Neuron());
+	for(let i = 0; i < 5; i++) {
+		let n = new Neuron();
+		n.mesh.position.x = (-75) + (40*i) + (-5 + Math.random()*10);
+		n.mesh.position.y = (100) + (-3 + Math.random()*6);
+		console.log(n.mesh.position.x);
+
+		addToMyGame(n);
+	}
+
+
+
 
 	//add the listener
 	document.addEventListener('mousemove', recordMouseMove, false);
@@ -27,6 +37,7 @@ function init() {
 function addToMyGame(myObj) {
 	scene.objects.push(myObj);
 	scene.add(myObj.mesh || null);
+	myObj.init();
 }
 
 /**************************************/
@@ -49,7 +60,6 @@ function createScene() {
 	scene.objects = [];
 	scene.update = () => {
 		for (let i = 0; i < scene.objects.length; i++) {
-			console.log(scene.objects[i]);
 	  	scene.objects[i].update(scene);
 		}
 		// render the scene

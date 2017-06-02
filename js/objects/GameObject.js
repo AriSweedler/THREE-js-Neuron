@@ -7,15 +7,19 @@ class GameObject {
 
   }
 
+  init() {
+    
+  }
+
   /*enable() {
 
   }
 
-  disable() {
+  onEnable() {
 
   }
 
-  onEnable() {
+  disable() {
 
   }
 
