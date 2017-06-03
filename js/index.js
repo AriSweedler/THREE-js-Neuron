@@ -13,101 +13,47 @@ function init() {
 	createLights(); // add the lights
 
 	//add the objects
-	//var myNeuron = new Neuron(scene);
 	for(let i = 0; i < 5; i++) {
-		let n = new Neuron();
-		n.mesh.position.x = (-75) + (40*i) + (-5 + Math.random()*10);
-		n.mesh.position.y = (100) + (-3 + Math.random()*6);
-		console.log(n.mesh.position.x);
+		let n = new Neuron(i);
+		n.mesh.position.x = (-75) + (40*i); //+ (-5 + Math.random()*10);
+		n.mesh.position.y = (0); + //(-3 + Math.random()*6);
 
 		addToMyGame(n);
 	}
 
-
-
-
-	//add the listener
-	document.addEventListener('mousemove', recordMouseMove, false);
-
-	// start a loop that will update the objects' positions
-	// and render the scene on each frame
-	scene.update();
-}
-
-function addToMyGame(myObj) {
-	scene.objects.push(myObj);
-	scene.add(myObj.mesh || null);
-	myObj.init();
+	scene.loop();
 }
 
 /**************************************/
 /*********create our scene*************/
-var scene,
-		camera, fieldOfView, aspectRatio, nearPlane, farPlane, HEIGHT, WIDTH,
-		renderer, container;
+var container;
 function createScene() {
-	// Get the width and the height of the screen,
-	// use them to set up the aspect ratio of the camera
-	// and the size of the renderer.
-  WIDTH = window.innerWidth;
-	HEIGHT = window.innerHeight;
+	container = document.getElementById('world');	//We have our container be any HTML DOM object
 
-	scene = new THREE.Scene(); // Create the scene
-	// Add a fog effect to the scene; same color as the
-	// background color used in the style sheet
-	scene.fog = new THREE.Fog(0xf7d9aa, 100, 1150);
+	//For now, we want the width and height of our global window object. But later, we might want our entire THREE.js scene to reside in a different spot
+	container.innerWidth = this.innerWidth;
+	container.innerHeight = this.innerHeight;
+  this.WIDTH = container.innerWidth;	//these are useful to write down
+	this.HEIGHT = container.innerHeight;
 
-	scene.objects = [];
-	scene.update = () => {
-		for (let i = 0; i < scene.objects.length; i++) {
-	  	scene.objects[i].update(scene);
-		}
-		// render the scene
-		renderer.render(scene, camera);
-		requestAnimationFrame(scene.update);
-	}
+	createSceneInstance();
+	createCameraInstance();
+	createRendererInstance();
+	createClickyShit();
 
-	// Create the camera
-	aspectRatio = WIDTH / HEIGHT;
-	fieldOfView = 60;
-	nearPlane = 1;
-	farPlane = 10000;
-	camera = new THREE.PerspectiveCamera(
-		fieldOfView,
-		aspectRatio,
-		nearPlane,
-		farPlane
-	);
-
-	// Set the position of the camera
-	camera.position.x = 0;
-	camera.position.z = 200;
-	camera.position.y = 100;
-
-	// Create the renderer
-	renderer = new THREE.WebGLRenderer({
-		// Allow transparency to show the gradient background we defined in the CSS
-		alpha: true,
-
-		// Activate the anti-aliasing; this is less performant,
-		// but, as our project is low-poly based, it should be fine :)
-		antialias: true
-	});
-
-	// Define the size of the renderer; in this case,
-	// it will fill the entire screen
-	renderer.setSize(WIDTH, HEIGHT);
-
-	// Enable shadow rendering
-	renderer.shadowMap.enabled = true;
-
-	// Add the DOM element of the renderer to the
-	// container we created in the HTML
-	container = document.getElementById('world');
-	container.appendChild(renderer.domElement);
-
-	// Listen to the screen: if the user resizes it we have to update the camera and the renderer size
+	//If the user resizes it we have to update the camera and the renderer size
 	window.addEventListener('resize', handleWindowResize, false);
+}
+
+/**************************************/
+/********init helper functions*********/
+var scene, camera, renderer,
+		projector, raycaster;
+function createSceneInstance() {
+	scene = new THREE.Scene();
+	scene.fog = new THREE.Fog(0xf7d9aa, 100, 1150);
+	scene.objects = [];
+	scene.loop = update;
 }
 
 var hemisphereLight, ambientLight;
@@ -121,6 +67,80 @@ function createLights() {
 	hemisphereLight = new THREE.HemisphereLight(0xaaaaaa,0x000000, .9)
 	scene.add(hemisphereLight);
 }
+function createCameraInstance() {
+	// Create the camera
+	let aspectRatio = WIDTH / HEIGHT;
+	let fieldOfView = 60;
+	let nearPlane = 1;
+	let farPlane = 10000;
+	camera = new THREE.PerspectiveCamera(
+		fieldOfView,
+		aspectRatio,
+		nearPlane,
+		farPlane
+	);
+
+	let centerOfScene = {x: 0, y: 0, z: 0};
+	// need three numeric parameters for camera.position.set
+	// Make sure to move the camera back 200 units from the center of the scene so we can actually see
+	camera.position.set(centerOfScene.x, centerOfScene.y, centerOfScene.z + 200);
+	camera.lookAt(new THREE.Vector3(centerOfScene.x, centerOfScene.y, centerOfScene.z));
+	//need a THREE.Vector3 object as a parameter for camera.lookAt
+
+}
+function createRendererInstance() {
+	// Create the renderer
+	renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
+	renderer.setSize(WIDTH, HEIGHT);
+
+	// Enable shadow rendering
+	renderer.shadowMap.enabled = true;
+
+	//add the renderer to our world container
+	container.appendChild(renderer.domElement);
+}
+function createClickyShit() {
+	document.addEventListener('mousemove', recordMouseMove, false);
+	raycaster = new THREE.Raycaster();
+}
+
+
+
+function update() {
+	{
+		//update objects
+		for (let i = 0; i < scene.objects.length; i++) {
+			scene.objects[i].update();
+		}
+
+		//update mouse stuff
+
+		//First, we get a ray from two points: mousePos and cameraPos. We draw a ray into our scene
+		//Then, the ray sees what objects it intersects as per such: http://imgur.com/UikgfRZ
+		raycaster.setFromCamera(mousePos, camera);
+		raycaster.far = camera.far;
+
+		var intersects = raycaster.intersectObjects(scene.children);
+		for ( var i = 0; i < intersects.length; i++ ) {
+			let myId = intersects[i].object.myId;
+			let myObj = scene.objects[myId];
+			myObj.mouseOver();
+		}
+
+		//and render the scene
+		renderer.render(scene, camera);
+		requestAnimationFrame(scene.loop);
+	}
+}
+
+/**************************************/
+/****************other*****************/
+var mousePos = new THREE.Vector2();
+function recordMouseMove(event) {
+	mousePos.x = (2*(event.clientX / WIDTH) - 1);
+	mousePos.y = (2*(event.clientY / HEIGHT) - 1) * -1;
+	document.getElementById('mouseStats').innerHTML = "My mouse position is (" + mousePos.x + ", " + mousePos.y + ")";
+}
 
 function handleWindowResize() {
 	HEIGHT = window.innerHeight;
@@ -130,13 +150,8 @@ function handleWindowResize() {
 	camera.updateProjectionMatrix();
 }
 
-/**************************************/
-/****************other*****************/
-var mousePos={x:0, y:0};
-function recordMouseMove(event) {
-	var tx = -1 + (event.clientX / WIDTH)*2;
-
-	var normalY = -1 + (event.clientY / WIDTH)*2;
-	var ty = -1 * normalY;
-	mousePos = {x:tx, y:ty};
+function addToMyGame(myObj) {
+	scene.objects.push(myObj);
+	scene.add(myObj.mesh || null);
+	myObj.init();
 }

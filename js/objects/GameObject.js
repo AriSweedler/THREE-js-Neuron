@@ -8,6 +8,10 @@ class GameObject {
   }
 
   init() {
+
+  }
+
+  mouseOver() {
     
   }
 

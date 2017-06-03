@@ -1,24 +1,35 @@
+var Colors = {
+	unused: 0x000000,
+  highlighted: 0x000000,
+  clicked: 0x000000,
+  used: 0x000000
+};
+
+
 class Neuron extends GameObject {
-  constructor () {
+  constructor (id) {
     super();
-    this.geom = new THREE.SphereGeometry(10, 7, 8);
+    this.geom = new THREE.SphereGeometry(15, 7, 8);
     this.mat = new THREE.MeshPhongMaterial({
       color:0xFDB813,
       shading:THREE.FlatShading,
     });
     this.mesh = new THREE.Mesh(this.geom, this.mat);
-    //this.myTotal = 0;
+    this.mesh.myId = id;  //used to recover the parent object of the mesh for
+    //when we realize the mouse is over a Neuron
   }
 
   update() {
-    // this.mesh.rotation.z += 0.001;
-    // this.mesh.rotation.x += 0.0007;
-    // this.mesh.rotation.y += 0.0008;
-    this.moveWaves();
+    //this.moveWaves();
+    this.mat.color.set(0xFDB813);
+  }
+
+  mouseOver() {
+    console.log(this.mesh.myId);
+    this.mat.color.set(0xff0000);	//mouse over ==> red
   }
 
   init() {
-    //this.mesh.position.set(-50, 100, 0);
     document.addEventListener('keypress', this.moveNeuron.bind(this), false);
 
     // important: by merging vertices we ensure the continuity of the waves
@@ -40,7 +51,6 @@ class Neuron extends GameObject {
           frequency:(0.016 + Math.random()*0.032)*2 // a random speed between 0.016 and 0.048 radians / frame
         });
     }
-    //console.log(this.waves);
   }
 
   moveNeuron(e) {
@@ -59,14 +69,9 @@ class Neuron extends GameObject {
 }
 
 Neuron.prototype.moveWaves = function (){
-  //console.log("moving waves");
-  //console.log(this);
-
   // get the vertices
 	var verts = this.mesh.geometry.vertices;
 	var l = verts.length;
-  //console.log(verts);
-  //console.log("\n");
 
 	for (var i=0; i<l; i++){
 		var v = verts[i];
@@ -80,7 +85,6 @@ Neuron.prototype.moveWaves = function (){
 
 		// increment the angle for the next frame
 		vprops.angle += vprops.frequency;
-
 	}
 
 	// Tell the renderer that the geometry of the sea has changed.
