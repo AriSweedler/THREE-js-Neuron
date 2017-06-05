@@ -17,6 +17,8 @@ class Neuron extends GameObject {
     this.mesh = new THREE.Mesh(this.geom, this.mat);
     this.mesh.myId = id;  //used to recover the parent object of the mesh for
     //when we realize the mouse is over a Neuron
+
+		this.mesh.mouseOver = this.mouseOver;
   }
 
   update() {
@@ -30,7 +32,7 @@ class Neuron extends GameObject {
   }
 
   init() {
-    document.addEventListener('keypress', this.moveNeuron.bind(this), false);
+    //document.addEventListener('keypress', this.moveNeuron.bind(this), false);
 
     // important: by merging vertices we ensure the continuity of the waves
     this.geom.mergeVertices();
@@ -55,16 +57,16 @@ class Neuron extends GameObject {
 
   moveNeuron(e) {
     console.log(this.mesh.position);
-     var unicode=e.keyCode? e.keyCode : e.charCode
-     if(unicode === 97) {//left {
-       this.mesh.position.x -= 10;
-     } else if (unicode === 119) {//up {
-       this.mesh.position.y += 10;
-     } else if (unicode === 100) {//right {
-       this.mesh.position.x += 10;
-     } else if (unicode === 115) {//down {
-       this.mesh.position.y -= 10;
-     }
+    var unicode=e.keyCode? e.keyCode : e.charCode
+    if(unicode === 97) {//left {
+      this.mesh.position.x -= 10;
+    } else if (unicode === 119) {//up {
+      this.mesh.position.y += 10;
+    } else if (unicode === 100) {//right {
+      this.mesh.position.x += 10;
+    } else if (unicode === 115) {//down {
+      this.mesh.position.y -= 10;
+    }
   }
 }
 

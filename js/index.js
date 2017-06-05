@@ -26,7 +26,7 @@ function init() {
 
 /**************************************/
 /*********create our scene*************/
-var container;
+var container, controls;
 function createScene() {
 	container = document.getElementById('world');	//We have our container be any HTML DOM object
 
@@ -40,6 +40,7 @@ function createScene() {
 	createCameraInstance();
 	createRendererInstance();
 	createClickyShit();
+	createControls();
 
 	//If the user resizes it we have to update the camera and the renderer size
 	window.addEventListener('resize', handleWindowResize, false);
@@ -87,6 +88,11 @@ function createCameraInstance() {
 	camera.lookAt(new THREE.Vector3(centerOfScene.x, centerOfScene.y, centerOfScene.z));
 	//need a THREE.Vector3 object as a parameter for camera.lookAt
 
+	camera.moveSpeed = 3;
+	camera.position.target = {};
+	camera.position.target.x = centerOfScene.x;
+	camera.position.target.y = centerOfScene.y;
+	camera.position.target.z = centerOfScene.z+200;
 }
 function createRendererInstance() {
 	// Create the renderer
@@ -102,9 +108,69 @@ function createRendererInstance() {
 function createClickyShit() {
 	document.addEventListener('mousemove', recordMouseMove, false);
 	raycaster = new THREE.Raycaster();
+
+	this.keys = [];
+	window.onkeyup = function(e) {keys[e.which]=false;}
+	window.onkeydown = function(e) {keys[e.which]=true;}
 }
+function createControls() {
+	//console.log("creating controls");
 
+	// Hook pointer lock state change events
+	document.addEventListener('pointerlockchange', pointerLockChange, false);
+	document.addEventListener('mozpointerlockchange', pointerLockChange, false);
+	document.addEventListener('webkitpointerlockchange', pointerLockChange, false);
 
+	// Hook mouse move events
+	//document.addEventListener("mousemove", lockedMouseMove, false);
+
+	let havePointerLock = 'pointerLockElement' in document ||
+    'mozPointerLockElement' in document ||
+    'webkitPointerLockElement' in document;
+
+	console.log(havePointerLock + " is what I say about pointer lock.");
+
+	let element = container;
+	// Ask the browser to lock the pointer
+	element.requestPointerLock = element.requestPointerLock ||
+			element.mozRequestPointerLock ||
+			element.webkitRequestPointerLock;
+	console.log(element.requestPointerLock);
+	element.requestPointerLock();
+
+	// // Ask the browser to release the pointer
+	// document.exitPointerLock = document.exitPointerLock ||
+	// 		document.mozExitPointerLock ||
+	// 		document.webkitExitPointerLock;
+	// document.exitPointerLock();
+}
+function pointerLockChange() {
+	console.log("I am happy");
+	if (document.pointerLockElement === requestedElement ||
+  		document.mozPointerLockElement === requestedElement ||
+  		document.webkitPointerLockElement === requestedElement) {
+  	// Pointer was just locked, enable the mousemove listener
+  	document.addEventListener("mousemove", lockedMouseMove, false);
+	} else {
+		console.log("what is unlock hook");
+	  // Pointer was just unlocked, disable the mousemove listener
+	  document.removeEventListener("mousemove", lockedMouseMove, false);
+	  this.unlockHook(this.element);
+	}
+}
+function lockedMouseMove(e) {
+	console.log("locked mouse move");
+
+	var movementX = e.movementX ||
+		e.mozMovementX          ||
+		e.webkitMovementX       ||
+		0;
+
+	var	movementY = e.movementY ||
+		e.mozMovementY      ||
+		e.webkitMovementY   ||
+		0;
+}
 
 function update() {
 	{
@@ -113,18 +179,20 @@ function update() {
 			scene.objects[i].update();
 		}
 
+		//update camera
+		moveCamera();
+
 		//update mouse stuff
 
 		//First, we get a ray from two points: mousePos and cameraPos. We draw a ray into our scene
 		//Then, the ray sees what objects it intersects as per such: http://imgur.com/UikgfRZ
 		raycaster.setFromCamera(mousePos, camera);
-		raycaster.far = camera.far;
+		//raycaster.far = camera.far;
 
 		var intersects = raycaster.intersectObjects(scene.children);
 		for ( var i = 0; i < intersects.length; i++ ) {
-			let myId = intersects[i].object.myId;
-			let myObj = scene.objects[myId];
-			myObj.mouseOver();
+			intersects[i].object.material.color.set(0xff0000);
+			//console.log(intersects[i].object);
 		}
 
 		//and render the scene
@@ -137,8 +205,9 @@ function update() {
 /****************other*****************/
 var mousePos = new THREE.Vector2();
 function recordMouseMove(event) {
+	event.preventDefault();
 	mousePos.x = (2*(event.clientX / WIDTH) - 1);
-	mousePos.y = (2*(event.clientY / HEIGHT) - 1) * -1;
+	mousePos.y = - ( event.clientY / HEIGHT ) * 2 + 1;
 	document.getElementById('mouseStats').innerHTML = "My mouse position is (" + mousePos.x + ", " + mousePos.y + ")";
 }
 
@@ -154,4 +223,18 @@ function addToMyGame(myObj) {
 	scene.objects.push(myObj);
 	scene.add(myObj.mesh || null);
 	myObj.init();
+}
+
+function moveCamera() {
+	if (keys[65]) {camera.position.target.x -= camera.moveSpeed;}
+	if (keys[87]) {camera.position.target.y += camera.moveSpeed;}
+	if (keys[68]) {camera.position.target.x += camera.moveSpeed;}
+	if (keys[83]) {camera.position.target.y -= camera.moveSpeed;}
+
+	for(var n in camera.position.target) {
+		let delta = camera.position.target[n] - camera.position[n];
+		let v = delta*.1;
+		if(Math.abs(v) < camera.moveSpeed/10) {camera.position.target[n] = camera.position[n];}
+		camera.position[n] += v;
+	}
 }
