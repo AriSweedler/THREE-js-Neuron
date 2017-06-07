@@ -13,21 +13,36 @@ function init() {
 	createLights(); // add the lights
 
 	//add the objects
-	for(let i = 0; i < 5; i++) {
-		let n = new Neuron(i);
-		n.mesh.position.x = (-75) + (40*i); //+ (-5 + Math.random()*10);
-		n.mesh.position.y = (50); //(-3 + Math.random()*6);
 
-		addToMyGame(n);
+	//rows of spheres so that we can more easily see how we handle controls
+	for(let r = 0; r < 10; r++) {
+		for(let c = 0; c < 15; c++) {
+			let n = new Neuron();
+			n.mesh.position.x = (-200) + (40*c);
+			n.mesh.position.y = (-100) + (40*r);
+			n.mesh.position.z = -300;
+			addToMyGame(n);
+		}
 	}
+	for(let r = 0; r < 10; r++) {
+		for(let c = 0; c < 15; c++) {
+			let n = new Neuron();
+			n.mesh.position.x = (-200) + (40*c); //+ (-5 + Math.random()*10);
+			n.mesh.position.y = (-100) + (40*r); //(-3 + Math.random()*6);
+			n.mesh.position.z = 100;
+			addToMyGame(n);
+		}
+	}
+
 
 	scene.loop();
 }
 
 /**************************************/
 /*********create our scene*************/
-var container, controls;
+var container, controls, clock;
 function createScene() {
+	clock = new THREE.Clock();
 	container = document.getElementById('world');	//We have our container be any HTML DOM object
 
 	//For now, we want the width and height of our global window object. But later, we might want our entire THREE.js scene to reside in a different spot
@@ -37,10 +52,9 @@ function createScene() {
 	this.HEIGHT = container.innerHeight;
 
 	createSceneInstance();
-	createPlayer();
 	createCameraInstance();
 	createRendererInstance();
-	createClickyShit();
+	createMouseRecording();
 	createControls();
 
 	//If the user resizes it we have to update the camera and the renderer size
@@ -49,7 +63,7 @@ function createScene() {
 
 /**************************************/
 /********init helper functions*********/
-var scene, camera, player, renderer, centerOfScene,
+var scene, camera, renderer, centerOfScene,
 		projector, raycaster;
 function createSceneInstance() {
 	scene = new THREE.Scene();
@@ -91,72 +105,10 @@ function createCameraInstance() {
 	camera.lookAt(new THREE.Vector3(centerOfScene.x, centerOfScene.y, centerOfScene.z));
 	//need a THREE.Vector3 object as a parameter for camera.lookAt
 
-	camera.moveSpeed = 3;
 	camera.position.target = {};
 	camera.position.target.x = centerOfScene.x;
 	camera.position.target.y = centerOfScene.y;
 	camera.position.target.z = centerOfScene.z+200;
-}
-function createPlayer() {
-	player = new THREE.Group();
-
-	player.up = new THREE.Mesh(
-		new THREE.CylinderGeometry(3, 3, 10, 3),
-		new THREE.MeshBasicMaterial()
-	);
-	player.up.ball = new THREE.Mesh(
-		new THREE.SphereGeometry(1, 10, 10),
-		new THREE.MeshBasicMaterial()
-	);
-	player.up.ball.position.y += 5;
-	player.up.add(player.up.ball);
-	player.up.material.color.set(0x00ff00);
-	player.up.position.y += 5;
-	//up.material.wireframe = true;
-	player.up.geometry.applyMatrix(new THREE.Matrix4().makeRotationY(-Math.PI/2));
-	player.add(player.up);
-
-	player.forward = new THREE.Mesh(
-		new THREE.CylinderGeometry(3, 3, 10, 3),
-		new THREE.MeshBasicMaterial()
-	);
-	player.forward.ball = new THREE.Mesh(
-		new THREE.SphereGeometry(1, 10, 10),
-		new THREE.MeshBasicMaterial()
-	);
-	player.forward.ball.position.z -= 5;
-	player.forward.add(player.forward.ball);
-	player.forward.material.color.set(0xff0000);
-	player.forward.position.z -= 5;
-	//player.forward.material.wireframe = true;
-	player.forward.geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI/2));
-	player.add(player.forward);
-
-	player.sideways = new THREE.Mesh(
-		new THREE.CylinderGeometry(3, 3, 10, 3),
-		new THREE.MeshBasicMaterial()
-	);
-	player.sideways.ball = new THREE.Mesh(
-		new THREE.SphereGeometry(1, 10, 10),
-		new THREE.MeshBasicMaterial()
-	);
-	player.sideways.ball.position.x -= 5;
-	player.sideways.add(player.sideways.ball);
-	player.sideways.material.color.set(0x0000ff);
-	player.sideways.position.x -= 5;
-	//player.sideways.material.wireframe = true;
-	player.sideways.geometry.applyMatrix(new THREE.Matrix4().makeRotationZ(-Math.PI/2));
-	player.add(player.sideways);
-
-	player.ball = new THREE.Mesh(
-		new THREE.SphereGeometry(1, 10, 10),
-		new THREE.MeshBasicMaterial()
-	);
-	player.add(player.ball);
-
-	player.position.set(0, 0, 0);
-	player.scale.set(2, 2, 2);
-	scene.add(player);
 }
 function createRendererInstance() {
 	// Create the renderer
@@ -169,16 +121,14 @@ function createRendererInstance() {
 	//add the renderer to our world container
 	container.appendChild(renderer.domElement);
 }
-function createClickyShit() {
+function createMouseRecording() {
 	document.addEventListener('mousemove', recordMouseMove, false);
 	raycaster = new THREE.Raycaster();
-
-	this.keys = [];
-	window.onkeyup = function(e) {keys[e.which]=false;}
-	window.onkeydown = function(e) {keys[e.which]=true;}
 }
 function createControls() {
-	//console.log("creating controls");
+	this.controls = new THREE.FirstPersonControls(camera);
+	controls.movementSpeed = 500;
+	controls.lookSpeed = 0.1;
 
 	// Hook pointer lock state change events
 	document.addEventListener('pointerlockchange', lockChangeAlert, false);
@@ -216,7 +166,6 @@ function lockChangeAlert() {
 	  // Pointer was just unlocked, disable the mousemove listener
 	  document.removeEventListener("mousemove", lockedMouseMove, false);
 		console.log("mouse unlocked");
-		console.log(player);
 		container.onclick = () => {container.requestPointerLock();}
 	  //this.unlockHook(container);
 	}
@@ -234,30 +183,26 @@ function lockedMouseMove(e) {
 		0;
 
 	if(movementX != 0) {
-		console.log("yaw" + movementX);
-		player.rotation.y -= (movementX/100);
+		//console.log("yaw" + movementX);
+		//player.rotation.y -= (movementX/100);
 	}
 	if(movementY != 0) {
-		console.log("pitch" + movementY);
-		player.rotation.x -= (movementY/100);
+		//console.log("pitch" + movementY);
+		//player.rotation.x -= (movementY/100);
 	}
 }
 
 function update() {
 	{
+		var delta = clock.getDelta();
+		var time = clock.getElapsedTime() * 10;
+
 		//update objects
 		for (let i = 0; i < scene.objects.length; i++) {
 			scene.objects[i].update();
 		}
 
-		//update the "player"'s position (and the camera's position)
-		movePlayer();
-		console.log(player.ball.position.x + " " + player.ball.position.y + " " + player.ball.position.z);
-		//console.log(player.forward.ball.position.x + " " + player.forward.ball.position.y + " " + player.forward.ball.position.z);
-		camera.position.set(player.ball.position.x, player.ball.position.y, player.ball.position.z);
 
-		camera.rotation.x = player.rotation.x;
-		camera.rotation.y = player.rotation.y;
 
 
 		//update mouse stuff
@@ -274,6 +219,9 @@ function update() {
 		}
 
 		//and render the scene
+		//update the "player"'s position (and the camera's position)
+		//movePlayer();
+		controls.update(delta);
 		renderer.render(scene, camera);
 		requestAnimationFrame(scene.loop);
 	}
@@ -295,30 +243,12 @@ function handleWindowResize() {
 	renderer.setSize(WIDTH, HEIGHT);
 	camera.aspect = WIDTH / HEIGHT;
 	camera.updateProjectionMatrix();
+
+	controls.handleResize();
 }
 
 function addToMyGame(myObj) {
 	scene.objects.push(myObj);
 	scene.add(myObj.mesh || null);
 	myObj.init();
-}
-
-function movePlayer() {
-	// let delta = {};
-	// for(var n in camera.position) {
-	// 	delta[n] = camera.position[n] - centerOfScene[n];
-	// }
-	// // need three numeric parameters for camera.position.set
-	//
-	// if (keys[65]) {camera.position.target.x -= camera.moveSpeed;}//left
-	// if (keys[87]) {camera.position.target.y += camera.moveSpeed;}//up
-	// if (keys[68]) {camera.position.target.x += camera.moveSpeed;}//right
-	// if (keys[83]) {camera.position.target.y -= camera.moveSpeed;}//down
-	// // //
-	// for(var n in camera.position.target) {
-	// 	let delta = camera.position.target[n] - camera.position[n];
-	// 	let v = delta*.1;
-	// 	if(Math.abs(v) < camera.moveSpeed/10) {camera.position.target[n] = camera.position[n];}
-	// 	camera.position[n] += v;
-	// }
 }

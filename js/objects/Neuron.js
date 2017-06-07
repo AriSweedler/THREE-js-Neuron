@@ -7,7 +7,7 @@ var Colors = {
 
 
 class Neuron extends GameObject {
-  constructor (id) {
+  constructor () {
     super();
     this.geom = new THREE.SphereGeometry(15, 7, 8);
     this.mat = new THREE.MeshPhongMaterial({
@@ -15,8 +15,6 @@ class Neuron extends GameObject {
       shading:THREE.FlatShading,
     });
     this.mesh = new THREE.Mesh(this.geom, this.mat);
-    this.mesh.myId = id;  //used to recover the parent object of the mesh for
-    //when we realize the mouse is over a Neuron
 
 		this.mesh.mouseOver = this.mouseOver;
   }
@@ -24,11 +22,6 @@ class Neuron extends GameObject {
   update() {
     //this.moveWaves();
     this.mat.color.set(0xFDB813);
-  }
-
-  mouseOver() {
-    console.log(this.mesh.myId);
-    this.mat.color.set(0xff0000);	//mouse over ==> red
   }
 
   init() {
