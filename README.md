@@ -1,2 +1,2 @@
-# THREE-js-Neuron
-Here's my attempt at art. Or at least a "Neuron", I guess.
+# sphereWorld
+I don't know what's up, but I thought it'd be cool to combine a square grid of spheres and first person controls (from a library) 
